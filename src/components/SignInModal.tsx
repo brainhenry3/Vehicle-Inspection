@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { User } from "../types";
-import { Wrench, LogIn, ShieldAlert, Search, CheckCircle2, Lock, Eye, EyeOff } from "lucide-react";
+import { Wrench, LogIn, ShieldAlert, Search, CheckCircle2 } from "lucide-react";
 
 interface SignInModalProps {
   isOpen: boolean;
@@ -19,8 +19,6 @@ export const SignInModal: React.FC<SignInModalProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
   if (!isOpen) return null;
@@ -37,13 +35,10 @@ export const SignInModal: React.FC<SignInModalProps> = ({
     if (user.status === "Suspended") {
       setErrorMsg(`Account for ${user.name} is suspended. Please contact your administrator.`);
       setSelectedUser(null);
-      setPassword("");
       return;
     }
     setErrorMsg("");
     setSelectedUser(user);
-    setPassword("");
-    setShowPassword(false);
   };
 
   const handleConfirmSignIn = () => {
@@ -52,14 +47,9 @@ export const SignInModal: React.FC<SignInModalProps> = ({
       setErrorMsg(`Account for ${selectedUser.name} is suspended.`);
       return;
     }
-    if (selectedUser.password && password !== selectedUser.password) {
-      setErrorMsg("Incorrect password. Please try again.");
-      return;
-    }
     onSignIn(selectedUser);
     setSelectedUser(null);
     setSearchTerm("");
-    setPassword("");
     setErrorMsg("");
   };
 
@@ -168,43 +158,6 @@ export const SignInModal: React.FC<SignInModalProps> = ({
           )}
         </div>
 
-        {/* Password input for password-protected accounts */}
-        {selectedUser && selectedUser.password && (
-          <div className="p-4 border-t border-slate-800 bg-slate-950/50 space-y-2 animate-in slide-in-from-bottom duration-200">
-            <div className="flex items-center justify-between">
-              <label className="text-[10px] font-bold text-blue-400 uppercase tracking-wider flex items-center space-x-1">
-                <Lock className="w-3.5 h-3.5 text-blue-400" />
-                <span>Password Verification</span>
-              </label>
-              <span className="text-[10px] text-slate-500">
-                Required for {selectedUser.name}
-              </span>
-            </div>
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                placeholder="Enter password (e.g. gigmile@2024)"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-3 pr-10 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 font-mono"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && password) {
-                    handleConfirmSignIn();
-                  }
-                }}
-                autoFocus
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-3 text-slate-500 hover:text-slate-300 transition"
-              >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-          </div>
-        )}
-
         {/* Footer actions */}
         <div className="p-4 bg-slate-950 border-t border-slate-800 flex items-center justify-between">
           <div className="text-xs text-slate-400">
@@ -227,9 +180,9 @@ export const SignInModal: React.FC<SignInModalProps> = ({
             )}
             <button
               onClick={handleConfirmSignIn}
-              disabled={!selectedUser || (!!selectedUser.password && !password)}
+              disabled={!selectedUser}
               className={`px-5 py-2 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition shadow-lg ${
-                selectedUser && (!selectedUser.password || password)
+                selectedUser
                   ? "bg-blue-600 hover:bg-blue-500 text-white shadow-blue-600/30 cursor-pointer"
                   : "bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700/50"
               }`}
