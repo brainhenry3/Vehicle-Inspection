@@ -245,7 +245,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             Reports
           </button>
-          {currentUser.role === "Admin" && (
+          {currentUser?.role === "Admin" && (
             <button
               onClick={() => setActiveTab("admin")}
               className={`px-3 py-1.5 rounded-lg text-xs whitespace-nowrap font-medium ${

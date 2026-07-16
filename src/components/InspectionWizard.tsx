@@ -121,7 +121,7 @@ export const InspectionWizard: React.FC<InspectionWizardProps> = ({
   };
 
   const handleFinalSubmit = () => {
-    let totalItems = 0;
+    let totalItemsPossible = 0;
     let earnedScore = 0;
     const catScores: Record<string, number> = {};
 
@@ -129,20 +129,22 @@ export const InspectionWizard: React.FC<InspectionWizardProps> = ({
       let catTotal = 0;
       let catEarned = 0;
       cat.items.forEach((_, idx) => {
-        totalItems++;
-        catTotal += 5;
         const status = checklist[cat.name]?.[idx]?.status || "Pass";
+        if (status === "N/A") {
+          return;
+        }
+        totalItemsPossible++;
+        catTotal += 5;
         if (status === "Pass") catEarned += 5;
         else if (status === "Fair") catEarned += 3;
         else if (status === "Needs Attention") catEarned += 2;
         else if (status === "Critical") catEarned += 0;
-        else catTotal -= 5;
       });
       earnedScore += catEarned;
       catScores[cat.name] = catTotal > 0 ? Math.round((catEarned / catTotal) * 100) : 100;
     });
 
-    const finalScore = totalItems > 0 && earnedScore >= 0 ? Math.round((earnedScore / (totalItems * 5)) * 100) : 90;
+    const finalScore = totalItemsPossible > 0 ? Math.round((earnedScore / (totalItemsPossible * 5)) * 100) : 100;
 
     const photosRecord: Record<string, string> = {};
     photoList.forEach(p => {

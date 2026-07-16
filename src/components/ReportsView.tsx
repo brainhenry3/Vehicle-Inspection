@@ -9,6 +9,14 @@ interface ReportsViewProps {
 export const ReportsView: React.FC<ReportsViewProps> = ({ inspections }) => {
   const [timeRange, setTimeRange] = useState("Monthly");
   const [selectedBranch, setSelectedBranch] = useState("All");
+  const [toast, setToast] = useState<string | null>(null);
+
+  const triggerToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => {
+      setToast(null);
+    }, 3000);
+  };
 
   const totalInspections = inspections.length;
   const avgScore = totalInspections > 0 ? Math.round(inspections.reduce((a, b) => a + (b.overallScore || 0), 0) / totalInspections) : 0;
@@ -25,7 +33,15 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ inspections }) => {
   const revenueOpportunity = totalPartsCost + totalLabourCost;
 
   return (
-    <div className="space-y-6 pb-16">
+    <div className="space-y-6 pb-16 relative">
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 border border-emerald-500/30 text-emerald-400 px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-2 animate-bounce">
+          <ShieldCheck className="w-5 h-5 text-emerald-400" />
+          <span className="text-xs font-semibold">{toast}</span>
+        </div>
+      )}
+
       {/* Header */}
       <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
@@ -45,7 +61,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ inspections }) => {
             <option value="Yearly">Yearly Report</option>
           </select>
           <button
-            onClick={() => alert("Report exported successfully to Excel format.")}
+            onClick={() => triggerToast("Report exported successfully to Excel format.")}
             className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-xs font-medium shadow flex items-center space-x-1.5 transition"
           >
             <FileSpreadsheet className="w-4 h-4" />

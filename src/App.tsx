@@ -19,17 +19,40 @@ export default function App() {
   const [vehicleTypes, setVehicleTypes] = useState<string[]>(["Sedan", "SUV", "Pickup", "Truck", "Bus", "Motorcycle", "Electric Vehicle"]);
   const [models, setModels] = useState<string[]>(["Camry SE", "Model Y Long Range", "F-150 Lightning", "Civic Type R", "RAV4 Hybrid", "Actros 2645"]);
   const [spareParts, setSpareParts] = useState<SparePart[]>([]);
-  const [currentUser, setCurrentUser] = useState<User | null>({
-    id: "usr-1",
-    name: "Administrator",
-    email: "admin@autoinspect.pro",
-    role: "Admin",
-    branch: "All Branches",
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<User | null>(() => {
+    const saved = localStorage.getItem("autoinspect_user");
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        return null;
+      }
+    }
+    const hasLoggedOut = localStorage.getItem("autoinspect_logged_out");
+    if (hasLoggedOut === "true") {
+      return null;
+    }
+    return {
+      id: "usr-1",
+      name: "Administrator",
+      email: "admin@autoinspect.pro",
+      role: "Admin",
+      branch: "All Branches",
+    };
   });
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
   const [selectedInspection, setSelectedInspection] = useState<InspectionRecord | null>(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [pendingSyncCount, setPendingSyncCount] = useState(0);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    setTimeout(() => {
+      setToastMessage(null);
+    }, 4000);
+  };
 
   // Fetch initial data from Express backend
   useEffect(() => {
@@ -49,6 +72,7 @@ export default function App() {
 
   const fetchData = async () => {
     try {
+      setIsLoading(true);
       const [insRes, tplRes, usrRes, brRes, vtRes, mdRes, spRes] = await Promise.all([
         fetch("/api/inspections").then((r) => r.json()),
         fetch("/api/templates").then((r) => r.json()),
@@ -63,7 +87,11 @@ export default function App() {
       if (Array.isArray(tplRes)) setTemplates(tplRes);
       if (Array.isArray(usrRes)) {
         setUsers(usrRes);
-        if (usrRes.length > 0) setCurrentUser(usrRes[0]);
+        const saved = localStorage.getItem("autoinspect_user");
+        const hasLoggedOut = localStorage.getItem("autoinspect_logged_out");
+        if (!saved && hasLoggedOut !== "true" && usrRes.length > 0) {
+          setCurrentUser(usrRes[0]);
+        }
       }
       if (Array.isArray(brRes)) setBranches(brRes);
       if (Array.isArray(vtRes)) setVehicleTypes(vtRes);
@@ -71,6 +99,8 @@ export default function App() {
       if (Array.isArray(spRes)) setSpareParts(spRes);
     } catch (e) {
       console.error("Failed to fetch initial data:", e);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -314,17 +344,56 @@ export default function App() {
 
   const handleSync = () => {
     setPendingSyncCount(0);
-    alert("All offline inspection records synchronized successfully with the central cloud server.");
+    showToast("All offline inspection records synchronized successfully with the central cloud server.");
   };
 
   const handleSignOut = () => {
     setCurrentUser(null);
+    localStorage.removeItem("autoinspect_user");
+    localStorage.setItem("autoinspect_logged_out", "true");
     setIsSignInModalOpen(true);
   };
 
   const handleOpenSignIn = () => {
     setIsSignInModalOpen(true);
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center justify-center font-sans">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-600/30 animate-pulse">
+            <svg className="w-8 h-8 text-white animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </div>
+          <div className="text-sm font-semibold tracking-wide text-slate-300 animate-pulse">
+            Loading AutoInspect Pro...
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center font-sans p-4">
+        <SignInModal
+          isOpen={true}
+          users={users}
+          onSignIn={(u) => {
+            setCurrentUser(u);
+            localStorage.setItem("autoinspect_user", JSON.stringify(u));
+            localStorage.removeItem("autoinspect_logged_out");
+            setIsSignInModalOpen(false);
+            setActiveTab("dashboard");
+          }}
+          canClose={false}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-blue-600 selection:text-white">
@@ -344,11 +413,14 @@ export default function App() {
 
       {/* Sign In Modal */}
       <SignInModal
-        isOpen={!currentUser || isSignInModalOpen}
+        isOpen={isSignInModalOpen}
         users={users}
         onSignIn={(u) => {
           setCurrentUser(u);
+          localStorage.setItem("autoinspect_user", JSON.stringify(u));
+          localStorage.removeItem("autoinspect_logged_out");
           setIsSignInModalOpen(false);
+          setActiveTab("dashboard");
         }}
         onClose={() => {
           if (currentUser) setIsSignInModalOpen(false);
@@ -432,6 +504,16 @@ export default function App() {
           />
         )}
       </main>
+
+      {/* Floating Global Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 border border-emerald-500/30 text-emerald-400 px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-2 animate-bounce max-w-sm">
+          <svg className="w-5 h-5 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span className="text-xs font-semibold">{toastMessage}</span>
+        </div>
+      )}
     </div>
   );
 }
