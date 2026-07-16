@@ -1,0 +1,7 @@
+{
+  "name": "AutoInspect Pro",
+  "description": "Commercial Vehicle Inspection & Evaluation System with dynamic templates, multipoint checklists, repair recommendations, AI insights, and multi-format exports.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
