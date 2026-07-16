@@ -221,10 +221,11 @@ async function startServer() {
   ];
 
   const defaultUsers = [
-    { id: "usr-1", name: "Administrator", email: "admin@autoinspect.pro", role: "Admin", branch: "All Branches" },
-    { id: "usr-2", name: "Marcus Vance", email: "marcus@autoinspect.pro", role: "Inspector", branch: "Downtown Central Workshop" },
-    { id: "usr-3", name: "Elena Rostova", email: "elena@autoinspect.pro", role: "Supervisor", branch: "Northside EV Hub" },
-    { id: "usr-4", name: "Audit Viewer", email: "viewer@autoinspect.pro", role: "Viewer", branch: "All Branches" }
+    { id: "usr-gigmile", name: "Henry Eniediabasi", email: "henry.eniediabasi@gigmile.com", role: "Admin", branch: "All Branches", status: "Active", password: "gigmile@2024" },
+    { id: "usr-1", name: "Administrator", email: "admin@autoinspect.pro", role: "Admin", branch: "All Branches", status: "Active", password: "admin@2024" },
+    { id: "usr-2", name: "Marcus Vance", email: "marcus@autoinspect.pro", role: "Inspector", branch: "Downtown Central Workshop", status: "Active" },
+    { id: "usr-3", name: "Elena Rostova", email: "elena@autoinspect.pro", role: "Supervisor", branch: "Northside EV Hub", status: "Active" },
+    { id: "usr-4", name: "Audit Viewer", email: "viewer@autoinspect.pro", role: "Viewer", branch: "All Branches", status: "Active" }
   ];
 
   const defaultBranches = [
@@ -278,6 +279,27 @@ async function startServer() {
       }
     } catch (e) {
       console.error("Failed to load persistence:", e);
+    }
+  }
+
+  // Ensure Henry Eniediabasi super admin is always present, updated, and placed at the top of db.users
+  if (Array.isArray(db.users)) {
+    const gigmileAdminIndex = db.users.findIndex((u: any) => u.email === "henry.eniediabasi@gigmile.com");
+    const adminUserObj = {
+      id: "usr-gigmile",
+      name: "Henry Eniediabasi",
+      email: "henry.eniediabasi@gigmile.com",
+      role: "Admin",
+      branch: "All Branches",
+      status: "Active",
+      password: "gigmile@2024"
+    };
+    if (gigmileAdminIndex === -1) {
+      db.users.unshift(adminUserObj);
+      saveDb();
+    } else {
+      db.users[gigmileAdminIndex] = { ...db.users[gigmileAdminIndex], ...adminUserObj };
+      saveDb();
     }
   }
 

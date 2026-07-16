@@ -7,6 +7,7 @@ export interface User {
   role: UserRole;
   branch: string;
   status?: "Active" | "Suspended";
+  password?: string;
 }
 
 export interface Branch {
